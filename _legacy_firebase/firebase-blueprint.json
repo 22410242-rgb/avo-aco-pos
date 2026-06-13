@@ -1,0 +1,263 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "System users (Admin, Manager, Cashier)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["Admin", "Manager", "Cashier"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "email", "role", "createdAt"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Product categories",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "icon": { "type": "string" }
+      },
+      "required": ["id", "name", "icon"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Store products",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "hasSizes": { "type": "boolean" },
+        "prices": {
+          "type": "object",
+          "properties": {
+            "S": { "type": "number" },
+            "M": { "type": "number" },
+            "L": { "type": "number" }
+          }
+        },
+        "purchasePrice": { "type": "number" },
+        "image": { "type": "string" },
+        "barcode": { "type": "string" },
+        "category": { "type": "string" },
+        "stock": { "type": "number" },
+        "minStock": { "type": "number" },
+        "status": { "type": "string", "enum": ["available", "unavailable"] },
+        "salesCount": { "type": "number" },
+        "itemType": { "type": "string", "enum": ["sellable", "internal"] }
+      },
+      "required": ["id", "name", "price", "purchasePrice", "image", "barcode", "category", "stock", "minStock", "status"]
+    },
+    "Invoice": {
+      "title": "Invoice",
+      "description": "Sales invoices",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "orderNumber": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "items": { "type": "array" },
+        "subtotal": { "type": "number" },
+        "discount": { "type": "number" },
+        "total": { "type": "number" },
+        "paymentMethod": { "type": "string" },
+        "payments": { "type": "array" },
+        "cashierName": { "type": "string" },
+        "cashierId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "cashPaid": { "type": "number" },
+        "change": { "type": "number" },
+        "status": { "type": "string" },
+        "sessionId": { "type": "string" }
+      },
+      "required": ["id", "orderNumber", "date", "items", "subtotal", "discount", "total", "paymentMethod", "payments", "cashierName", "cashierId", "status"]
+    },
+    "RegisterSession": {
+      "title": "RegisterSession",
+      "description": "Cash register sessions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "openingTime": { "type": "string", "format": "date-time" },
+        "closingTime": { "type": "string", "format": "date-time" },
+        "openingCash": { "type": "number" },
+        "closingCash": { "type": "number" },
+        "expectedCash": { "type": "number" },
+        "difference": { "type": "number" },
+        "status": { "type": "string", "enum": ["Open", "Closed"] },
+        "notes": { "type": "string" }
+      },
+      "required": ["id", "userId", "userName", "openingTime", "openingCash", "status"]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "Store expenses",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "category", "amount", "date", "userId", "createdAt"]
+    },
+    "SystemSettings": {
+      "title": "SystemSettings",
+      "description": "Application settings",
+      "type": "object",
+      "properties": {
+        "storeName": { "type": "string" },
+        "storeLogo": { "type": "string" },
+        "storePhone": { "type": "string" },
+        "storeEmail": { "type": "string" },
+        "storeAddress": { "type": "string" },
+        "invoiceFooter": { "type": "string" },
+        "currency": { "type": "string" },
+        "currencySymbol": { "type": "string" },
+        "autoPrintAfterPayment": { "type": "boolean" },
+        "showOrderNumber": { "type": "boolean" },
+        "showCashierName": { "type": "boolean" },
+        "invoiceLayout": { "type": "string" },
+        "kitchenPrinterName": { "type": "string" },
+        "receiptPrinterName": { "type": "string" },
+        "isThermalPrinter": { "type": "boolean" },
+        "autoKitchenPrint: boolean": { "type": "boolean" },
+        "invoicePaperSize": { "type": "string" },
+        "kitchenPaperSize": { "type": "string" },
+        "useQZTray": { "type": "boolean" }
+      }
+    },
+    "Supplier": {
+      "title": "Supplier",
+      "description": "Product suppliers",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "address": { "type": "string" },
+        "notes": { "type": "string" },
+        "initialBalance": { "type": "number" },
+        "balance": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "phone", "initialBalance", "balance", "createdAt"]
+    },
+    "SupplierTransaction": {
+      "title": "SupplierTransaction",
+      "description": "Financial transactions with suppliers",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "supplierId": { "type": "string" },
+        "type": { "type": "string", "enum": ["Payment", "Receipt", "Purchase"] },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" }
+      },
+      "required": ["id", "supplierId", "type", "amount", "date", "userId"]
+    },
+    "Purchase": {
+      "title": "Purchase",
+      "description": "Inventory purchase records",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "invoiceNumber": { "type": "string" },
+        "supplierId": { "type": "string" },
+        "supplierName": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "items": { "type": "array" },
+        "total": { "type": "number" },
+        "notes": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" }
+      },
+      "required": ["id", "invoiceNumber", "supplierId", "date", "items", "total", "userId"]
+    },
+    "InventoryMovement": {
+      "title": "InventoryMovement",
+      "description": "Stock movement records",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "type": { "type": "string", "enum": ["Purchase", "Sale", "Return", "Adjustment", "Transfer"] },
+        "quantity": { "type": "number" },
+        "referenceId": { "type": "string" },
+        "size": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "note": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" }
+      },
+      "required": ["id", "productId", "type", "quantity", "referenceId", "date", "userId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Product categories"
+    },
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Inventory products"
+    },
+    "/invoices/{invoiceId}": {
+      "schema": "Invoice",
+      "description": "Sales records"
+    },
+    "/sessions/{sessionId}": {
+      "schema": "RegisterSession",
+      "description": "Register sessions"
+    },
+    "/expenses/{expenseId}": {
+      "schema": "Expense",
+      "description": "Expense records"
+    },
+    "/heldOrders/{orderId}": {
+      "schema": "Invoice",
+      "description": "Held orders"
+    },
+    "/settings/config": {
+      "schema": "SystemSettings",
+      "description": "Global settings"
+    },
+    "/suppliers/{supplierId}": {
+      "schema": "Supplier",
+      "description": "Supplier records"
+    },
+    "/supplierTransactions/{transactionId}": {
+      "schema": "SupplierTransaction",
+      "description": "Supplier transaction records"
+    },
+    "/purchases/{purchaseId}": {
+      "schema": "Purchase",
+      "description": "Purchase records"
+    },
+    "/inventoryMovements/{movementId}": {
+      "schema": "InventoryMovement",
+      "description": "Inventory movement records"
+    }
+  }
+}

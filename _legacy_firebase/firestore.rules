@@ -1,0 +1,208 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Fields: id, name, email, role, createdAt
+    //
+    // Collection: categories
+    // Fields: id, name, icon
+    //
+    // Collection: products
+    // Fields: id, name, price, hasSizes, prices, purchasePrice, image, barcode, category, stock, minStock, status, salesCount, itemType
+    //
+    // Collection: invoices
+    // Fields: id, orderNumber, date, items, subtotal, discount, total, paymentMethod, payments, cashierName, cashierId, customerName, cashPaid, change, status, sessionId
+    //
+    // Collection: sessions
+    // Fields: id, userId, userName, openingTime, closingTime, openingCash, closingCash, expectedCash, difference, status, notes
+    //
+    // Collection: expenses
+    // Fields: id, title, category, amount, date, userId, userName, notes, createdAt
+    //
+    // Collection: settings
+    // Document: config
+    // Fields: storeName, storeLogo, storePhone, storeEmail, storeAddress, invoiceFooter, currency, currencySymbol, autoPrintAfterPayment, showOrderNumber, showCashierName, invoiceLayout, kitchenPrinterName, receiptPrinterName, isThermalPrinter, autoKitchenPrint, invoicePaperSize, kitchenPaperSize, useQZTray
+    //
+    // Collection: suppliers
+    // Fields: id, name, phone, email, address, notes, initialBalance, balance, createdAt
+    //
+    // Collection: supplierTransactions
+    // Fields: id, supplierId, type, amount, date, notes, userId, userName
+    //
+    // Collection: purchases
+    // Fields: id, invoiceNumber, supplierId, supplierName, date, items, total, notes, userId, userName
+    //
+    // Collection: inventoryMovements
+    // Fields: id, productId, productName, type, quantity, referenceId, size, date, note, userId, userName
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin' ||
+          (request.auth.token.email == "mohammadalmasri950@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isManager() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Manager' || isAdmin());
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string &&
+        email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasRequiredFields(['id', 'name', 'email', 'role', 'createdAt']) &&
+             data.id is string && data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             isValidEmail(data.email) &&
+             data.role in ['Admin', 'Manager', 'Cashier'];
+    }
+
+    function isValidProduct(data) {
+      return hasRequiredFields(['id', 'name', 'price', 'purchasePrice', 'image', 'barcode', 'category', 'stock', 'minStock', 'status']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
+             data.price is number && data.purchasePrice is number &&
+             data.stock is number && data.minStock is number;
+    }
+
+    function isValidSupplier(data) {
+      return hasRequiredFields(['id', 'name', 'phone', 'initialBalance', 'balance', 'createdAt']) &&
+             data.id is string && data.name is string && data.name.size() > 0 &&
+             data.phone is string && data.initialBalance is number && data.balance is number;
+    }
+
+    function isValidSupplierTransaction(data) {
+      return hasRequiredFields(['id', 'supplierId', 'type', 'amount', 'date', 'userId']) &&
+             data.id is string && data.supplierId is string &&
+             data.type in ['Payment', 'Receipt', 'Purchase'] &&
+             data.amount is number && data.userId is string;
+    }
+
+    function isValidPurchase(data) {
+      return hasRequiredFields(['id', 'invoiceNumber', 'supplierId', 'date', 'items', 'total', 'userId']) &&
+             data.id is string && data.invoiceNumber is string &&
+             data.supplierId is string && data.items is list &&
+             data.total is number && data.userId is string;
+    }
+
+    function isValidInventoryMovement(data) {
+      return hasRequiredFields(['id', 'productId', 'type', 'quantity', 'referenceId', 'date', 'userId']) &&
+             data.id is string && data.productId is string &&
+             data.type in ['Purchase', 'Sale', 'Return', 'Adjustment', 'Transfer'] &&
+             data.quantity is number && data.referenceId is string && data.userId is string;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if true; // Allow unauthenticated read for login screen user list
+      allow create: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(userId) || isAdmin());
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(userId) || isAdmin());
+      allow delete: if isAdmin() || (isAuthenticated() && resource.data.email == request.auth.token.email);
+    }
+
+    match /categories/{categoryId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    match /products/{productId} {
+      allow read: if isAuthenticated();
+      allow create: if isManager();
+      allow update: if isAuthenticated() && (isManager() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['salesCount', 'stock']));
+      allow delete: if isAdmin();
+    }
+
+    match /invoices/{invoiceId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (isAdmin() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'refundDate', 'refundedItems', 'refundReason', 'cashPaid', 'change', 'payments']));
+      allow delete: if isAdmin();
+    }
+
+    match /sessions/{sessionId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (isOwner(resource.data.userId) || isManager() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['closingTime', 'closingCash', 'expectedCash', 'difference', 'notes', 'status']));
+      allow delete: if isAdmin();
+    }
+
+    match /expenses/{expenseId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isManager();
+    }
+
+    match /heldOrders/{orderId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /suppliers/{supplierId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isManager() && isValidSupplier(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /supplierTransactions/{transactionId} {
+      allow read: if isAuthenticated();
+      allow create: if isManager() && isValidSupplierTransaction(request.resource.data);
+      allow update, delete: if isAdmin();
+    }
+
+    match /purchases/{purchaseId} {
+      allow read: if isAuthenticated();
+      allow create: if isManager() && isValidPurchase(request.resource.data);
+      allow update, delete: if isAdmin();
+    }
+
+    match /inventoryMovements/{movementId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidInventoryMovement(request.resource.data);
+      allow update, delete: if isAdmin();
+    }
+
+    match /settings/config {
+      allow read: if isAuthenticated();
+      allow update: if isAuthenticated() && (isAdmin() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastOrderNumber']));
+      allow create, delete: if isAdmin();
+    }
+
+    // Default deny
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}
